@@ -6,7 +6,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -19,10 +18,10 @@ model User {
 
 model Product {
   id          String   @id @default(uuid())
-  name        String   // Ürün Adı
-  category    String   // Kategori (Vana, Boru, Fan vb.)
-  price       Float    // Birim Fiyat
-  stock       Int      // Stok Miktarı
-  description String?  // Teknik Açıklama
+  name        String
+  category    String
+  price       Float
+  stock       Int
+  description String?
   createdAt   DateTime @default(now())
 }
