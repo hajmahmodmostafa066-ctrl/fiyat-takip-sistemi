@@ -35,8 +35,9 @@ app.post('/api/login', async (req, res) => {
         const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '24h' });
         res.json({ mesaj: "Başarılı", token, isim: user.name });
     } catch (e) {
-        res.status(500).json({ hata: "Sunucu hatası." });
-    }
+    console.error("GİRİŞ HATASI:", e); // Render loglarında tam hatayı göreceğiz
+    res.status(500).json({ hata: "SİSTEM HATASI: " + e.message }); // Hatanın ne olduğunu tarayıcıda göreceğiz
+}
 });
 
 app.post('/api/urun-ekle', async (req, res) => {
