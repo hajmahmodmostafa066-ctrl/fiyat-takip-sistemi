@@ -1,43 +1,27 @@
-require('dotenv').config(); // Bu satır en üstte olmak zorunda!
+require('dotenv').config();
 const express = require('express');
-const { Pool } = require('pg');
-const { PrismaPg } = require('@prisma/adapter-pg');
+const path = require('path');
+const cors = require('cors');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 const { PrismaClient } = require('@prisma/client');
 
-// --- Hata Ayıklama (Log) ---
-console.log("DB_URL Kontrolü:", process.env.DATABASE_URL ? "URL YÜKLÜ" : "URL BOŞ/YOK");
-
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false }
-});
-const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter }); // Hata burada alınıyor
-
-// Prisma bağlantısı
+// Prisma bağlantısı (TEK BİR KEZ TANIMLANDI)
 const prisma = new PrismaClient();
 
 const app = express();
 
-// --- MİDDLEWARE (İstekleri işleyen ana katman) ---
+// Middleware
 app.use(cors());
-app.use(express.json()); // JSON verilerini okumak için bu satır HAYATİ önem taşır.
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 
-// --- API ROTALARI ---
+// --- API Rotaları ---
 app.post('/api/login', async (req, res) => {
     try {
-        console.log("Gelen istek:", req.body); // Hata ayıklama için
         const { email, password } = req.body;
+        if (!email || !password) return res.status(400).json({ hata: "E-posta ve şifre zorunludur." });
 
-        if (!email || !password) {
-            return res.status(400).json({ hata: "E-posta ve şifre zorunludur." });
-        }
-
-        const user = await prisma.user.findUnique({ 
-            where: { email: email } 
-        });
-
+        const user = await prisma.user.findUnique({ where: { email } });
         if (!user) return res.status(401).json({ hata: "Kullanıcı bulunamadı." });
         
         const valid = await bcrypt.compare(password, user.password);
@@ -46,12 +30,10 @@ app.post('/api/login', async (req, res) => {
         const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '24h' });
         res.json({ mesaj: "Başarılı", token, isim: user.name });
     } catch (e) {
-        console.error("Giriş Hatası:", e);
         res.status(500).json({ hata: "Sunucu hatası: " + e.message });
     }
 });
 
-// Ürün işlemleri
 app.post('/api/urun-ekle', async (req, res) => {
     try {
         const { name, category, price, stock, description } = req.body;
@@ -73,14 +55,13 @@ app.get('/api/urunler', async (req, res) => {
     }
 });
 
-// --- STATİK DOSYALAR (Frontend) ---
+// --- Statik Dosyalar ve Yönlendirme ---
 app.use(express.static(__dirname));
 
-app.get('/', (req, res) => {
+app.get('/*', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Port Ayarı
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
     console.log(`[BAŞARILI] Termoenerji ERP sunucusu ${PORT} portunda çalışıyor...`);
