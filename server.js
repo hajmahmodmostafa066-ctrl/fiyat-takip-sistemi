@@ -33,7 +33,7 @@ app.post('/api/login', async (req, res) => {
         const { email, password } = req.body;
         if (!email || !password) return res.status(400).json({ hata: "E-posta ve şifre zorunludur." });
 
-        const user = await prisma.user.findUnique({ where: { email } });
+        const user = await prisma.appUser.findUnique({ where: { email } });
         if (!user) return res.status(401).json({ hata: "Kullanıcı bulunamadı." });
         
         const valid = await bcrypt.compare(password, user.password);
