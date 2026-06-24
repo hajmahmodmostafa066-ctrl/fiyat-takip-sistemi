@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
  "scripts": {
-  "build": "npm install && npx prisma generate && npx prisma db push",
+  "build": "npm install && npx prisma generate && npx prisma db push --force-reset",
   "start": "node server.js"
 },
   "keywords": [],
