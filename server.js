@@ -25,8 +25,18 @@ app.use(express.json());
 // 3. API Rotaları (MUTLAKA Statik dosyalardan ÖNCE olmalı!)
 app.post('/api/login', async (req, res) => {
     try {
+        console.log("Gelen istek gövdesi (req.body):", req.body); // Bu satırı ekle, Render loglarında ne geldiğini göreceğiz
         const { email, password } = req.body;
-        const user = await prisma.user.findUnique({ where: { email } });
+
+        // E-posta veya şifre boşsa hata fırlat
+        if (!email || !password) {
+            return res.status(400).json({ hata: "E-posta ve şifre zorunludur." });
+        }
+
+        const user = await prisma.user.findUnique({ 
+            where: { email: email } // Burada email değişkeninin dolu olduğundan emin oluyoruz
+        });
+
         if (!user) return res.status(401).json({ hata: "Kullanıcı bulunamadı." });
         
         const valid = await bcrypt.compare(password, user.password);
@@ -35,9 +45,9 @@ app.post('/api/login', async (req, res) => {
         const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '24h' });
         res.json({ mesaj: "Başarılı", token, isim: user.name });
     } catch (e) {
-    console.error("GİRİŞ HATASI:", e); // Render loglarında tam hatayı göreceğiz
-    res.status(500).json({ hata: "SİSTEM HATASI: " + e.message }); // Hatanın ne olduğunu tarayıcıda göreceğiz
-}
+        console.error("GİRİŞ HATASI DETAYI:", e);
+        res.status(500).json({ hata: "SİSTEM HATASI: " + e.message });
+    }
 });
 
 app.post('/api/urun-ekle', async (req, res) => {
