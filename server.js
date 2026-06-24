@@ -5,36 +5,29 @@ const cors = require('cors');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { PrismaClient } = require('@prisma/client');
-const { Pool } = require('pg');
-const { PrismaPg } = require('@prisma/adapter-pg');
+
+// Prisma bağlantısı
+const prisma = new PrismaClient();
 
 const app = express();
 
-// 1. Veritabanı Bağlantısı
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false }
-});
-const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter });
-
-// 2. Middleware
+// --- MİDDLEWARE (İstekleri işleyen ana katman) ---
 app.use(cors());
-app.use(express.json());
+app.use(express.json()); // JSON verilerini okumak için bu satır HAYATİ önem taşır.
+app.use(express.urlencoded({ extended: true }));
 
-// 3. API Rotaları (MUTLAKA Statik dosyalardan ÖNCE olmalı!)
+// --- API ROTALARI ---
 app.post('/api/login', async (req, res) => {
     try {
-        console.log("Gelen istek gövdesi (req.body):", req.body); // Bu satırı ekle, Render loglarında ne geldiğini göreceğiz
+        console.log("Gelen istek:", req.body); // Hata ayıklama için
         const { email, password } = req.body;
 
-        // E-posta veya şifre boşsa hata fırlat
         if (!email || !password) {
             return res.status(400).json({ hata: "E-posta ve şifre zorunludur." });
         }
 
         const user = await prisma.user.findUnique({ 
-            where: { email: email } // Burada email değişkeninin dolu olduğundan emin oluyoruz
+            where: { email: email } 
         });
 
         if (!user) return res.status(401).json({ hata: "Kullanıcı bulunamadı." });
@@ -45,11 +38,12 @@ app.post('/api/login', async (req, res) => {
         const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '24h' });
         res.json({ mesaj: "Başarılı", token, isim: user.name });
     } catch (e) {
-        console.error("GİRİŞ HATASI DETAYI:", e);
-        res.status(500).json({ hata: "SİSTEM HATASI: " + e.message });
+        console.error("Giriş Hatası:", e);
+        res.status(500).json({ hata: "Sunucu hatası: " + e.message });
     }
 });
 
+// Ürün işlemleri
 app.post('/api/urun-ekle', async (req, res) => {
     try {
         const { name, category, price, stock, description } = req.body;
@@ -71,13 +65,15 @@ app.get('/api/urunler', async (req, res) => {
     }
 });
 
-// 4. Statik Dosyalar (En altta)
+// --- STATİK DOSYALAR (Frontend) ---
 app.use(express.static(__dirname));
 
-// 5. Fallback (Tüm diğer yollar index.html'e gider)
-app.get('*', (req, res) => {
+app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
+// Port Ayarı
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log(`[BAŞARILI] Termoenerji ERP sunucusu ${PORT} portunda çalışıyor...`));
+app.listen(PORT, () => {
+    console.log(`[BAŞARILI] Termoenerji ERP sunucusu ${PORT} portunda çalışıyor...`);
+});
