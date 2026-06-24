@@ -1,10 +1,18 @@
-require('dotenv').config();
+require('dotenv').config(); // Bu satır en üstte olmak zorunda!
 const express = require('express');
-const path = require('path');
-const cors = require('cors');
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
+const { Pool } = require('pg');
+const { PrismaPg } = require('@prisma/adapter-pg');
 const { PrismaClient } = require('@prisma/client');
+
+// --- Hata Ayıklama (Log) ---
+console.log("DB_URL Kontrolü:", process.env.DATABASE_URL ? "URL YÜKLÜ" : "URL BOŞ/YOK");
+
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false }
+});
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter }); // Hata burada alınıyor
 
 // Prisma bağlantısı
 const prisma = new PrismaClient();
