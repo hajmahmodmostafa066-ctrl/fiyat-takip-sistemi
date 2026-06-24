@@ -22,11 +22,11 @@ const app = express();
 // Ayarlar
 app.use(cors());
 app.use(express.json());
-app.use(express.static('public')); // Frontend dosyalarının olduğu klasör
+app.use(express.static(__dirname)); // Frontend dosyalarının olduğu klasör
 
 // 1. Ana Sayfa (Arayüzü Sunar)
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // 2. Giriş Yap API
