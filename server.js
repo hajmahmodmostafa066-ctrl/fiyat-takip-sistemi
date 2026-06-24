@@ -10,12 +10,11 @@ app.use(express.json());
 app.use(express.static('public'));
 
 // API'nin çalıştığını test etmek için ana sayfa
-app.get('/', (req, res) => {
-    res.json({ 
-        sistem: "Termoenerji İklimlendirme ERP Backend", 
-        durum: "Aktif ve Çalışıyor",
-        versiyon: "1.0.0"
-    });
+{
+  "sistem": "Termoenerji İklimlendirme ERP Backend",
+  "durum": "Aktif ve Çalışıyor",
+  "versiyon": "1.0.0"
+}
 });
 
 // Sunucuyu Başlat
