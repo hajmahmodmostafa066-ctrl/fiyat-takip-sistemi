@@ -7,6 +7,7 @@ const app = express();
 // Güvenlik ve veri okuma izinleri
 app.use(cors());
 app.use(express.json());
+app.use(express.static('public'));
 
 // API'nin çalıştığını test etmek için ana sayfa
 app.get('/', (req, res) => {
