@@ -1,0 +1,94 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// 1. KULLANICI YÖNETİMİ
+enum Role {
+  ADMIN
+  USER
+  VIEWER
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(VIEWER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  priceChanges PriceHistoryLog[] 
+}
+
+// 2. FİRMA YÖNETİMİ
+model Company {
+  id            Int      @id @default(autoincrement())
+  name          String   @unique
+  contactPerson String?
+  phone         String?
+  email         String?
+  address       String?
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  prices        Price[]
+}
+
+// 3. KATEGORİ VE PARÇA YÖNETİMİ
+model Category {
+  id    Int    @id @default(autoincrement())
+  name  String @unique // Örn: Isıtma, Soğutma, Havalandırma, Yangın (Özel yangın güvenlik sembolü ile) vb.
+  parts Part[]
+}
+
+model Part {
+  id         Int      @id @default(autoincrement())
+  name       String
+  categoryId Int
+  category   Category @relation(fields: [categoryId], references: [id])
+  properties Json?    // Çap, et kalınlığı, debi gibi teknik veriler için esnek alan
+  unit       String   // Adet, Metre, Kg, Ton
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  prices     Price[]
+}
+
+// 4. FİYAT YÖNETİMİ
+model Price {
+  id          Int      @id @default(autoincrement())
+  partId      Int
+  part        Part     @relation(fields: [partId], references: [id])
+  companyId   Int
+  company     Company  @relation(fields: [companyId], references: [id])
+  brand       String
+  price       Float
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  historyLogs PriceHistoryLog[]
+
+  // Aynı firma/marka/parça üçlüsünün tek bir güncel fiyatı olmasını sağlar
+  @@unique([partId, companyId, brand]) 
+}
+
+// 5. FİYAT GEÇMİŞİ (LOG TABLOSU)
+model PriceHistoryLog {
+  id          Int      @id @default(autoincrement())
+  priceId     Int
+  priceRecord Price    @relation(fields: [priceId], references: [id])
+  oldPrice    Float
+  newPrice    Float
+  difference  Float
+  percentage  Float
+  changedById Int
+  changedBy   User     @relation(fields: [changedById], references: [id])
+  createdAt   DateTime @default(now())
+}
