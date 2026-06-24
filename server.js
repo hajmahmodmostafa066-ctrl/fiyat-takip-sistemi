@@ -64,7 +64,7 @@ app.get('/api/urunler', async (req, res) => {
 app.use(express.static(__dirname));
 
 // 5. Fallback (Tüm diğer yollar index.html'e gider)
-app.get('/*', (req, res) => {
+app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
