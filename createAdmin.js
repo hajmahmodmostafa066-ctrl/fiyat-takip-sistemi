@@ -1,45 +1,27 @@
-require('dotenv').config();
 const { PrismaClient } = require('@prisma/client');
-const { Pool } = require('pg'); 
-const { PrismaPg } = require('@prisma/adapter-pg'); 
 const bcrypt = require('bcrypt');
+const prisma = new PrismaClient();
 
-// 1. Veritabanı bağlantı havuzu (Render için SSL zorunluluğu eklendi)
-const pool = new Pool({ 
-    connectionString: process.env.DATABASE_URL,
-    ssl: {
-        rejectUnauthorized: false // Render'ın dış bağlantıları kabul etmesi için bu şarttır
+async function createAdmin() {
+    const email = "admin@termoenerji.com"; // Buraya kullanacağın e-postayı yaz
+    const password = "TermoAdmin123";      // Buraya kullanacağın şifreyi yaz
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    try {
+        const user = await prisma.user.create({
+            data: {
+                email: email,
+                password: hashedPassword,
+                name: "Termoenerji Admin",
+                role: "ADMIN"
+            }
+        });
+        console.log("Admin hesabı başarıyla oluşturuldu!");
+        console.log("E-posta:", email);
+        console.log("Şifre:", password);
+    } catch (e) {
+        console.error("Hata! Kullanıcı zaten var veya veritabanı bağlantısı yapılamadı:", e);
     }
-});
-
-// 2. Prisma 7 için PostgreSQL adaptörünü bağla
-const adapter = new PrismaPg(pool);
-
-// 3. Prisma Client'i yeni adaptör kurallarıyla başlat
-const prisma = new PrismaClient({ adapter });
-
-async function main() {
-    // Şifreyi veritabanında açıkça görünmemesi için kriptoluyoruz
-    const hashedPassword = await bcrypt.hash('TermoAdmin123', 10);
-
-    // Prisma ile User tablosuna ilk kaydımızı atıyoruz
-    const adminUser = await prisma.user.create({
-        data: {
-            name: 'Sistem Yöneticisi',
-            email: 'admin@termoenerji.com',
-            password: hashedPassword,
-            role: 'ADMIN'
-        }
-    });
-
-    console.log("🎉 BAŞARILI! İlk Admin hesabı veritabanına güvenle eklendi:");
-    console.log(`İsim: ${adminUser.name} | Rol: ${adminUser.role}`);
 }
 
-main()
-    .catch((e) => {
-        console.error("Kayıt sırasında bir hata oluştu:", e);
-    })
-    .finally(async () => {
-        await prisma.$disconnect();
-    });
+createAdmin();
